@@ -1,0 +1,77 @@
+`timescale 1ns / 1ps
+
+
+module testing;
+
+    reg [1:0]m,n,p;
+    reg clk;
+    reg rst;
+    reg [3:0] A00, A01, A02;
+    reg [3:0] A10, A11, A12;
+    reg [3:0] A20, A21, A22;
+    reg [3:0] B00, B01, B02;
+    reg [3:0] B10, B11, B12;
+    reg [3:0] B20, B21, B22;
+    wire [9:0] C00, C01, C02;
+    wire [9:0] C10, C11, C12;
+    wire [9:0] C20, C21, C22;
+    wire done;
+   
+
+
+    // Instantiate the MatrixMultiplier
+    MatrixMultiplier uut (done,clk,rst,m,n,p,A00, A01, A02, A10, A11, A12,A20, A21, A22, B00, B01, B02,B10, B11, B12,B20, B21, B22, C00, C01, C02, C10, C11, C12, C20, C21, C22);
+
+    initial 
+    begin
+    clk=1'b0;
+    rst=1'b0;
+    m=2'b10;n=2'b11;p=2'b11;
+    end
+    
+    initial begin
+    #10
+    rst=1'b1;
+    end
+    
+    always #5 clk = ~clk;
+    
+  
+    
+initial
+begin
+                   
+                #5  A00<=4'b0001;            
+                #10 A01<= 4'b0010;   
+                #10 A02<=4'b0011;
+                #10 A10<=4'b0100;
+                #10 A11<=4'b0101; 
+                #10 A12<=4'b0110;
+//                #10 A20<=4'b0111;
+//                #10 A21<=4'b1000;
+//                #10 A22<=4'b1001;
+                #10 B00<=4'b0001;
+                #10 B01<=4'b0010; 
+                #10 B02<=4'b0011;
+                #10 B10<=4'b0100; 
+                #10 B11<=4'b0101; 
+                #10 B12<=4'b0110;
+                #10 B20<=4'b0111;
+                #10 B21<=4'b1000; 
+                #10 B22<=4'b1001;
+                   end
+                   
+initial 
+begin
+#215
+$monitor("TIME :",$time,": C00=%d, C01=%d, C02=%d,C10=%d, C11=%d, C12=%d,C20=%d, C21=%d, C22=%d ",C00, C01, C02, C10, C11, C12, C20, C21, C22);
+       end 
+
+initial begin
+      #300 
+      $finish;
+    end
+endmodule
+    
+
+    

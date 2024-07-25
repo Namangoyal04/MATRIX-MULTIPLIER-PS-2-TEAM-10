@@ -1,0 +1,39 @@
+`timescale 1ns / 1ps
+
+
+module Testbench;
+    reg clk, reset;
+    reg [3:0] a11, a12, a13, a21, a22, a23, a31, a32, a33;
+    reg [3:0] b11,b12,b13,b21,b22,b23,b31,b32,b33;
+    wire [9:0] c11,c12,c13,c21,c22, c23, c31,  c32,  c33;
+
+MatrixMultiplier DUT(clk,reset,a11,a12,a13,a21,a22,a23,a31,a32,a33,b11,b12,b13,b21,b22,b23,b31,b32,b33,c12,c11,c13,c21,c22,c23,c31,c32,c33);
+
+initial
+begin
+clk=1'b1;
+ forever
+ #5 clk=~clk;
+end
+
+initial 
+begin 
+reset =1'b0;
+# 5 reset =1;
+end
+
+initial 
+begin
+$monitor($time," : c11=%b,c12=%b,c13=%b,c21=%b,c22=%b,c23=%b,c31=%b,c32=%b,c33=%b",c11,c12,c13,c21,c22,c23,c31,c32,c33);
+
+#10
+a11=4'b1010;a12=4'b1110;a13=4'b1011;a21=4'b0010;a22=4'b1010;a23=4'b0011;a31=4'b1011;a32=4'b1111;a33=4'b0000;
+b11=4'b1110;b12=4'b1011;b13=4'b1001;b21=4'b0110;b22=4'b1110;b23=4'b1100;b31=4'b1000;b32=4'b0010;b33=4'b1111;
+end
+
+initial 
+begin
+#100
+$finish;
+end
+endmodule

@@ -1,0 +1,330 @@
+
+module Full_Adder(S,Cout,A,B,Cin);
+input A,B,Cin;
+output S,Cout;
+    wire S1, C1, C2;
+    xor (S1, A, B);
+    xor (S, S1, Cin);
+    and (C1, A, B);
+    and (C2, S1, Cin);
+    or  (Cout, C1, C2);
+endmodule
+
+
+
+module adder_4bit(S,Cout,A,B,Cin); 
+input[3:0] A,B;
+input Cin;
+output [3:0] S;
+output Cout;
+   wire C1,C2,C3;  
+   //using instantiation 
+   Full_Adder  fa0(S[0], C1, A[0], B[0], Cin); 
+   Full_Adder fa1(S[1], C2, A[1], B[1], C1); 
+   Full_Adder fa2(S[2], C3, A[2], B[2], C2);    
+   Full_Adder fa3(S[3], Cout, A[3], B[3], C3);
+endmodule
+
+
+module adder_8bit(S,Cout1,A,B,Cin);
+input [7:0]A ,B;
+input Cin;
+output [7:0]S;
+output Cout1;
+ wire Cout2; 
+ adder_4bit A0(S[3:0],Cout2,A[3:0],B[3:0],Cin); 
+ adder_4bit A1(S[7:4],Cout1,A[7:4],B[7:4],Cout2);  
+endmodule
+
+
+
+module multiplier_4bit(a,b,outp);
+input [3:0] a;
+input [3:0] b;
+output [7:0]outp;
+    wire [3:0] p0, p1, p2, p3,p4,p5,p6;
+    wire [7:0] sum1, sum2, sum3;
+    wire  cout1, cout2,cout3;
+    wire S1,S2,S3,S4,S5,S6,COUT1,COUT2,COUT3,COUT4,COUT5;
+    
+    assign p0 = a & {4{b[0]}};
+    assign p1 = a & {4{b[1]}};
+    assign p2 = a & {4{b[2]}};
+    assign p3 = a & {4{b[3]}};
+    assign p4[3:0] ={ p1[2], p1[1], p1[0] ,1'b0};
+    assign p5[3:0] ={ p2[1], p2[0],2'b00};
+    assign p6[3:0] ={p3[0] ,3'b000};
+
+    adder_4bit adder1 (.A(p0), .B(p4), .Cin(1'b0), .S(sum1[3:0]), .Cout(cout1));
+    Full_Adder FA1(S1,COUT1,cout1,p1[3],0);
+    assign sum1[7:4] = {2'b0,COUT1,S1};
+
+    adder_4bit adder2 (.A(sum1[3:0]), .B(p5), .Cin(1'b0), .S(sum2[3:0]), .Cout(cout2));
+    Full_Adder FA2(S2,COUT2,cout2,sum1[4],p2[2]);
+    Full_Adder FA3(S3,COUT3,COUT2,sum1[5],p2[3]);
+    assign sum2[7:4] = {1'b0, COUT3,S3,S2};
+
+    adder_4bit adder3 (.A(sum2[3:0]), .B(p6), .Cin(1'b0), .S(sum3[3:0]), .Cout(cout3));
+    Full_Adder FA4(S4,COUT4,cout3,sum2[4],p3[1]);
+    Full_Adder FA5(S5,COUT5,COUT4,sum2[5],p3[2]);
+    Full_Adder FA6(S6,COUT6,COUT5,sum2[6],p3[3]);
+    assign sum3[7:4] = {COUT6,S6,S5,S4};
+
+    assign outp = sum3;
+
+endmodule
+
+module mux2to1(a,b,sel,y);
+ input a,b,sel;
+ output y;
+    wire not_sel, and_a, and_b;
+    
+    not (not_sel, sel);
+    and (and_a, a, not_sel);
+    and (and_b, b, sel);
+    or (y, and_a, and_b);
+endmodule
+
+module mux2to1_4bit(a,b,sel,y);
+input [3:0] a,b;
+input sel;
+output [3:0] y;
+    mux2to1 mux0(a[0], b[0], sel, y[0]);
+    mux2to1 mux1(a[1], b[1], sel, y[1]);
+    mux2to1 mux2(a[2], b[2], sel, y[2]);
+    mux2to1 mux3(a[3], b[3], sel, y[3]);
+endmodule
+
+module PIPO_REGISTER(clk,inp,outp);
+input clk;
+input [3:0] inp;
+output reg[3:0] outp;
+
+always @(*)
+  outp <=inp;
+  
+ endmodule
+
+
+module mux9to1_a(input [4:0] sel, input [35:0] d, output [3:0] y);
+    wire [3:0] mux0_out, mux1_out, mux2_out, mux3_out;
+    wire [3:0] mux4_out, mux5_out, mux6_out, mux7_out;
+    wire [3:0] mux8_out, mux9_out, mux10_out, mux11_out;
+    
+
+    mux2to1_4bit mux0_4bit(d[3:0], d[7:4], sel[0], mux0_out);
+    mux2to1_4bit mux1_4bit(d[11:8], d[15:12], sel[0], mux1_out);
+    mux2to1_4bit mux2_4bit(d[19:16], d[23:20], sel[0], mux2_out);
+    mux2to1_4bit mux3_4bit(d[27:24], d[31:28], sel[0], mux3_out);
+    mux2to1_4bit mux4_4bit(mux0_out, mux1_out, sel[1], mux4_out);
+    mux2to1_4bit mux5_4bit(mux2_out, mux3_out, sel[1], mux5_out);
+    mux2to1_4bit mux6_4bit(mux4_out, mux5_out, sel[2], mux6_out);
+    mux2to1_4bit mux7_4bit( mux6_out, d[35:32],sel[3], mux7_out);
+    mux2to1_4bit mux8_4bit(mux7_out, 4'bxxxx, sel[4], y); 
+    
+   
+    
+endmodule
+
+
+
+module mux9to1_b(input [4:0] sel, input [35:0] d, output [3:0]y);
+    wire [3:0] mux0_out, mux1_out, mux2_out, mux3_out;
+    wire [3:0] mux4_out, mux5_out, mux6_out, mux7_out;
+    wire [3:0] mux8_out, mux9_out, mux10_out, mux11_out;
+    
+    mux2to1_4bit mux0_4bit(d[3:0], d[7:4], sel[0], mux0_out);
+    mux2to1_4bit mux1_4bit(d[11:8], d[15:12], sel[0], mux1_out);
+    mux2to1_4bit mux2_4bit(d[19:16], d[23:20], sel[0], mux2_out);
+    mux2to1_4bit mux3_4bit(d[27:24], d[31:28], sel[0], mux3_out);
+    mux2to1_4bit mux4_4bit(mux0_out, mux1_out, sel[1], mux4_out);
+    mux2to1_4bit mux5_4bit(mux2_out, mux3_out, sel[1], mux5_out);
+    mux2to1_4bit mux6_4bit(mux4_out, mux5_out, sel[2], mux6_out);
+    mux2to1_4bit mux7_4bit( mux6_out, d[35:32],sel[3], mux7_out);
+    mux2to1_4bit mux8_4bit(mux7_out, 4'bxxxx, sel[4], y); 
+    
+    
+endmodule
+
+
+
+module MatrixMultiplier (done,clk,rst,m,n,p,A00, A01, A02, A10, A11, A12,A20, A21, A22, B00, B01, B02,B10, B11, B12,B20, B21, B22, C00, C01, C02, C10, C11, C12, C20, C21, C22);
+    input clk,rst;
+    input [1:0]m,n,p;
+    input [3:0] A00, A01, A02, A10, A11, A12,A20, A21, A22;
+    input [3:0] B00, B01, B02,B10, B11, B12,B20, B21, B22;
+    output reg [9:0] C00, C01, C02, C10, C11, C12, C20, C21, C22;
+    output reg done;
+
+    reg [2:0] state;
+    integer  i, j,k; 
+    reg [3:0] A[0:2][0:2];
+    reg [3:0] B[0:2][0:2];
+    reg [9:0] C[0:2][0:2];
+    wire [7:0] mul_result;
+    wire [7:0] add_result;
+    wire add_9th;
+    reg partial_add_9th;
+    reg [7:0] partial_sum;
+    reg  [4:0] clock_count_a; 
+    reg  [4:0] clock_count_b;
+    wire Sum_9th,Cout_10th;
+    reg Cout_val_10th;
+    
+    wire [35:0] a_inputs  ={A22,A21,A20,A12,A11,A10,A02,A01,A00};
+    wire [35:0] b_inputs ={B22, B21, B20, B12, B11, B10,B02,B01,B00 };
+    
+    parameter S0 = 3'b000, S1 = 3'b001, S2 = 3'b010, S3 = 3'b011,S4=3'b100;
+    wire[3:0] mux_a_output;
+    wire[3:0] mux_b_output;
+    wire[3:0] mux_a_out;
+    wire[3:0] mux_b_out;
+   
+    multiplier_4bit mult(A[i][k],B[k][j],mul_result);
+    adder_8bit add(add_result , add_9th ,partial_sum, mul_result ,0);
+    Full_Adder bit_9_10(Sum_9th,Cout_10th,partial_add_9th,add_9th,0);
+    
+    
+    mux9to1_a a_input(.sel(clock_count_a[4:0]),.d(a_inputs),.y(mux_a_out));
+    mux9to1_b b_input(.sel(clock_count_b[4:0]),.d(b_inputs),.y(mux_b_out));
+    
+    PIPO_REGISTER store_val_a(clk,mux_a_out,mux_a_output);  
+    PIPO_REGISTER store_val_b(clk,mux_b_out,mux_b_output); 
+      
+    
+   always @(posedge clk or negedge rst or k)
+    
+    begin
+         if (!rst)
+             begin
+               clock_count_a <= 0;
+               state <= S0;
+
+               done<=0;
+                i<=0;
+                j<=0;
+             end 
+             
+        else 
+           begin
+            
+              if (state==S0)
+                   begin
+                        if (clock_count_a < 9) 
+                            begin
+                                   A[i][j]<=mux_a_output;
+                                   clock_count_a<= clock_count_a + 1;
+                                
+                                   if (j<2)
+                                       j<=j+1;
+                                       
+                                   else if(i<2)
+                                     begin
+                                      i<=i+1;
+                                      j<=0;
+                                     end
+                             end
+                                         
+                        else
+                           begin
+                               state <= S1;
+                               i<= 0;
+                               j <= 0;
+                               clock_count_b <= 0;
+                           end
+                           
+                     end
+                     
+                else if (state==S1)
+                begin
+                           if (clock_count_b  < 9) 
+                                 begin
+                                       B[i][j]<=mux_b_output;
+                                       clock_count_b<= clock_count_b + 1;
+                                       
+                                       if (j<2)
+                                           j<=j+1;
+                                             
+                                       else if(i<2)
+                                             begin
+                                              i<=i+1;
+                                              j<=0;
+                                              //k<=0;
+                                             end
+                                  end
+                         
+                
+                             else 
+                                 begin
+                                 state = S2;
+                                 i <= 0;
+                                 j <= 0;
+                                 k <= 1;
+                                 end
+                  end
+        
+              else if (state==S2)
+              begin
+                      partial_sum <= 0;
+                      partial_add_9th<=0;
+                      Cout_val_10th<=0;
+                      state <= S3;
+                      k <= 0;
+                   end
+                   
+                else if(state==S3)
+                 begin
+                       if (k < n) 
+                         begin
+                           partial_sum <= add_result;
+                           partial_add_9th<=Sum_9th;
+                           Cout_val_10th<=Cout_10th;
+                           k <= k + 1;
+                         end 
+                       else 
+                         begin
+                            C[i][j] <={Cout_val_10th,partial_add_9th, partial_sum};
+                            state <= S4;
+                        end
+                    end 
+                    
+               else if(state== S4)
+                begin
+                       if (j < p-1) 
+                          begin
+                            j <= j + 1;
+                            state <= S2;
+                            k<=1;
+                          end 
+                          
+                       else if (i < m-1)
+                          begin
+                             j <= 0;
+                             i <= i + 1;
+                            state <= S2;
+                              k<=1;
+                         end 
+                         
+                       else
+                         begin
+                           done <= 1;
+                        end
+                        
+                    end
+                     
+        end
+    end
+
+    
+   always @(posedge clk) begin
+    //ouputs getting stored into 10 bit PIPO registers 
+        C00 <= C[0][0]; 
+        C01 <= C[0][1];
+        C02 <= C[0][2];
+        C10 <= C[1][0];
+        C11 <= C[1][1];
+        C12 <= C[1][2];
+        C20 <= C[2][0];
+        C21 <= C[2][1];
+        C22 <= C[2][2];
+    end0

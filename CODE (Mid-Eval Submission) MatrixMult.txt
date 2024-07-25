@@ -1,0 +1,185 @@
+`timescale 1ns / 1ps
+
+module Full_Adder(S,Cout,A,B,Cin);
+input A,B,Cin;
+output S,Cout;
+    wire S1, C1, C2;
+    xor (S1, A, B);
+    xor (S, S1, Cin);
+    and (C1, A, B);
+    and (C2, S1, Cin);
+    or  (Cout, C1, C2);
+endmodule
+
+
+
+module adder_4bit(S,Cout,A,B,Cin); 
+input[3:0] A,B;
+input Cin;
+output [3:0] S;
+output Cout;
+   wire C1,C2,C3;  
+   //using instantiation 
+   Full_Adder  fa0(S[0], C1, A[0], B[0], Cin); 
+   Full_Adder fa1(S[1], C2, A[1], B[1], C1); 
+   Full_Adder fa2(S[2], C3, A[2], B[2], C2);    
+   Full_Adder fa3(S[3], Cout, A[3], B[3], C3);
+endmodule
+
+
+module adder_8bit(S,Cout1,A,B,Cin);
+input [7:0]A ,B;
+input Cin;
+output [7:0]S;
+output Cout1;
+ wire Cout2; 
+ adder_4bit A0(S[3:0],Cout2,A[3:0],B[3:0],Cin); 
+ adder_4bit A1(S[7:4],Cout1,A[7:4],B[7:4],Cout2);  
+endmodule
+
+
+
+module multiplier_4bit(a,b,outp);
+input [3:0] a;
+input [3:0] b;
+output [7:0]outp;
+    wire [3:0] p0, p1, p2, p3,p4,p5,p6;
+    wire [7:0] sum1, sum2, sum3;
+    wire  cout1, cout2,cout3;
+    wire S1,S2,S3,S4,S5,S6,COUT1,COUT2,COUT3,COUT4,COUT5;
+    
+    assign p0 = a & {4{b[0]}};
+    assign p1 = a & {4{b[1]}};
+    assign p2 = a & {4{b[2]}};
+    assign p3 = a & {4{b[3]}};
+    assign p4[3:0] ={ p1[2], p1[1], p1[0] ,1'b0};
+    assign p5[3:0] ={ p2[1], p2[0],2'b00};
+    assign p6[3:0] ={p3[0] ,3'b000};
+
+    adder_4bit adder1 (.A(p0), .B(p4), .Cin(1'b0), .S(sum1[3:0]), .Cout(cout1));
+    Full_Adder FA1(S1,COUT1,cout1,p1[3],0);
+    assign sum1[7:4] = {2'b0,COUT1,S1};
+
+    adder_4bit adder2 (.A(sum1[3:0]), .B(p5), .Cin(1'b0), .S(sum2[3:0]), .Cout(cout2));
+    Full_Adder FA2(S2,COUT2,cout2,sum1[4],p2[2]);
+    Full_Adder FA3(S3,COUT3,COUT2,sum1[5],p2[3]);
+    assign sum2[7:4] = {1'b0, COUT3,S3,S2};
+
+    adder_4bit adder3 (.A(sum2[3:0]), .B(p6), .Cin(1'b0), .S(sum3[3:0]), .Cout(cout3));
+    Full_Adder FA4(S4,COUT4,cout3,sum2[4],p3[1]);
+    Full_Adder FA5(S5,COUT5,COUT4,sum2[5],p3[2]);
+    Full_Adder FA6(S6,COUT6,COUT5,sum2[6],p3[3]);
+    assign sum3[7:4] = {COUT6,S6,S5,S4};
+
+    assign outp = sum3;
+
+endmodule
+
+
+
+
+module MatrixMultiplier(clk,reset,a11,a12,a13,a21,a22,a23,a31,a32,a33,b11,b12,b13,b21,b22,b23,b31,b32,b33,c12,c11,c13,c21,c22,c23,c31,c32,c33);
+
+    input clk, reset;
+    input [3:0] a11, a12, a13, a21, a22, a23, a31, a32, a33;
+    input [3:0] b11,b12,b13,b21,b22,b23,b31,b32,b33;
+    output reg [9:0] c11,c12,c13,c21,c22, c23, c31,  c32,  c33;
+    reg [3:0] cycle_count;
+    wire [7:0]MUL[0:26];
+    wire [7:0]SUM[0:17];
+    wire [0:26]Cout;
+    wire [0:8]sum;
+    
+      multiplier_4bit dut0(a11,b11,MUL[0]);
+      multiplier_4bit dut1(a12,b21,MUL[1]);
+      multiplier_4bit dut2(a13,b31,MUL[2]);
+      adder_8bit dut3(SUM[0],Cout[0],MUL[0],MUL[1],0);
+      adder_8bit dut4(SUM[1],Cout[1],SUM[0],MUL[2],0);
+      Full_Adder dut5(sum[0],Cout[2],Cout[1],Cout[0],0);
+      
+      multiplier_4bit dut6(a11,b12,MUL[3]);
+      multiplier_4bit dut7(a12,b22,MUL[4]);
+      multiplier_4bit dut8(a13,b32,MUL[5]);
+      adder_8bit dut9(SUM[2],Cout[3],MUL[3],MUL[4],0);
+      adder_8bit dut10(SUM[3],Cout[4],SUM[2],MUL[5],0);
+      Full_Adder dut11(sum[1],Cout[5],Cout[4],Cout[3],0);
+      
+      multiplier_4bit dut12(a11,b13,MUL[6]);
+      multiplier_4bit dut13(a12,b23,MUL[7]);
+      multiplier_4bit dut14(a13,b33,MUL[8]);
+      adder_8bit dut15(SUM[4],Cout[6],MUL[6],MUL[7],0);
+      adder_8bit dut16(SUM[5],Cout[7],SUM[4],MUL[8],0);
+      Full_Adder dut17(sum[2],Cout[8],Cout[7],Cout[6],0);
+      
+      multiplier_4bit dut18(a21,b11,MUL[9]);
+      multiplier_4bit dut19(a22,b21,MUL[10]);
+      multiplier_4bit dut20(a23,b31,MUL[11]);
+      adder_8bit dut21(SUM[6],Cout[9],MUL[9],MUL[10],0);
+      adder_8bit dut22(SUM[7],Cout[10],SUM[6],MUL[11],0);
+      Full_Adder dut23(sum[3],Cout[11],Cout[10],Cout[9],0);
+      
+      multiplier_4bit dut24(a21,b12,MUL[12]);
+      multiplier_4bit dut25(a22,b22,MUL[13]);
+      multiplier_4bit dut26(a23,b32,MUL[14]);
+      adder_8bit dut27(SUM[8],Cout[12],MUL[12],MUL[13],0);
+      adder_8bit dut28(SUM[9],Cout[13],SUM[8],MUL[14],0);
+      Full_Adder dut29(sum[4],Cout[14],Cout[13],Cout[12],0);
+      
+      multiplier_4bit dut30(a21,b13,MUL[15]);
+      multiplier_4bit dut31(a22,b23,MUL[16]);
+      multiplier_4bit dut32(a23,b33,MUL[17]);
+      adder_8bit dut33(SUM[10],Cout[15],MUL[15],MUL[16],0);
+      adder_8bit dut34(SUM[11],Cout[16],SUM[10],MUL[17],0);
+      Full_Adder dut35(sum[5],Cout[17],Cout[16],Cout[15],0);
+      
+      multiplier_4bit dut36(a31,b11,MUL[18]);
+      multiplier_4bit dut37(a32,b21,MUL[19]);
+      multiplier_4bit dut38(a33,b31,MUL[20]);
+      adder_8bit dut39(SUM[12],Cout[18],MUL[18],MUL[19],0);
+      adder_8bit dut40(SUM[13],Cout[19],SUM[12],MUL[20],0);
+      Full_Adder dut41(sum[6],Cout[20],Cout[19],Cout[18],0);
+      
+      multiplier_4bit dut42(a31,b12,MUL[21]);
+      multiplier_4bit dut43(a32,b22,MUL[22]);
+      multiplier_4bit dut44(a33,b32,MUL[23]);
+      adder_8bit dut45(SUM[14],Cout[21],MUL[21],MUL[22],0);
+      adder_8bit dut46(SUM[15],Cout[22],SUM[14],MUL[23],0);
+      Full_Adder dut47(sum[7],Cout[23],Cout[22],Cout[21],0);
+      
+      multiplier_4bit dut48(a31,b13,MUL[24]);
+      multiplier_4bit dut49(a32,b23,MUL[25]);
+      multiplier_4bit dut50(a33,b33,MUL[26]);
+      adder_8bit dut51(SUM[16],Cout[24],MUL[24],MUL[25],0);
+      adder_8bit dut52(SUM[17],Cout[25],SUM[16],MUL[26],0);
+      Full_Adder dut53(sum[8],Cout[26],Cout[25],Cout[24],0);
+      
+      
+
+      
+    always @(posedge clk or negedge reset)
+     begin
+        if (!reset) 
+        begin
+            cycle_count = 0;
+        end 
+        
+        else 
+        begin
+            case (cycle_count)
+                0:c11={Cout[2],sum[0],SUM[1]};
+                1:c12={Cout[5],sum[1],SUM[3]};
+                2:c13={Cout[8],sum[2],SUM[5]};
+                3:c21={Cout[11],sum[3],SUM[7]};
+                4:c22={Cout[14],sum[4],SUM[9]};
+                5:c23={Cout[17],sum[5],SUM[11]};
+                6:c31={Cout[20],sum[6],SUM[13]};
+                7:c32={Cout[23],sum[7],SUM[15]};
+                8:c33={Cout[26],sum[8],SUM[17]};            
+            endcase
+
+            if (cycle_count < 9)
+                cycle_count = cycle_count + 1;
+        end
+    end
+endmodule
+
